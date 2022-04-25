@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}
+    Register Page
+{% endblock %}
+
+{% block content %}
+<body class="text-center">
+    <div class="container">
+            <h1 class="h3 mb-3 font-weight-normal">
+                What user type are you?
+            </h1>
+
+              <br/>
+              <p class="pull-none"><a href="{{ url_for('register.register_customer') }}">Register as Customer</a></p>
+              <br/>
+              <p class="pull-none"><a href="{{ url_for('register.register_agent') }}">Register as Agent</a></p>
+              <br/>
+              <p class="pull-none"><a href="{{ url_for('register.register_staff') }}">Register as Staff</a></p>
+
+            <div class="checkbox mb-3">
+               <h6>Already have an account?</h6>
+               <a class="btn btn-sm btn-secondary" href="{{ url_for('login_page') }}">Login</a>
+            </div>
+    </div>
+</body>
+{% endblock %}

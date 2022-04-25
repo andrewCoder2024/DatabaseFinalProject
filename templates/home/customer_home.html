@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Home{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Customer {{username}}'s Homepage</h1>
+</div>
+<div>
+  <h3>My Upcoming Flight(s)</h3>
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Ticket ID</th>
+        <th scope="col">Flight</th>
+        <th scope="col">Departure Airport</th>
+        <th scope="col">Departure Time</th>
+        <th scope="col">Arrival Airport</th>
+        <th scope="col">Arrival Time</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for line in posts %}
+    <tr>
+      <td>{{line.ticket_id}}</td>
+      <td>{{line.airline_name}} {{line.flight_num}}</td>
+      <td>{{line.departure_airport}}</td>
+      <td>{{line.departure_time}}</td>
+      <td>{{line.arrival_airport}}</td>
+      <td>{{line.arrival_time}}</td>
+    </tr>
+    </tbody>
+    {% endfor %}
+  </table>
+</div>
+<br/>
+
+<div>
+  <form class="form" method="POST">
+  <h3 class="form-heading">
+    My Spending is: <strong> {{mySpending}} </strong>
+  </h3>
+  <h4>(Default Range is last 6 month, or choose range in between: )</h4>
+  {{ form.fromDate(class_ = 'form-control first-input', placeholder = form.fromDate.label.text, required = true, autofocus = true) }}
+  {{ form.toDate(class_ = 'form-control last-input', placeholder = form.toDate.label.text, required = true) }}
+
+  <input type="submit" value="Select Range" class="btn btn-primary btn-lg btn-block" >
+      {{ form.submit(class="btn btn-lg btn-block btn-primary") }}
+  </form>
+</div>
+<br/>
+
+<div>
+  <h3> Sales Chart:</h3>
+  <canvas id="myChart"></canvas>
+</div>
+
+<script>
+    var data = {
+      // The type of chart we want to create
+      type: 'bar',
+      // The data for our dataset
+      data: {
+        labels: {{labels|safe}},
+        datasets: [{
+          label: 'Sales',
+          backgroundColor: 'rgb(255, 99, 132)',
+          borderColor: 'rgb(255, 99, 132)',
+          data: {{dataset}}
+        }]
+      },
+
+      // Configuration options go here
+      options: {}
+    }
+    var ctx = document.getElementById("myChart").getContext('2d');
+    var myChart = new Chart(ctx, data);
+</script>
+
+{% endblock %}

@@ -1,0 +1,390 @@
+{% extends 'base.html' %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<br class="page-header">
+  <h1>Staff {{username}}'s Homepage</h1>
+<h5>
+    Airline MVP customer: {{ frequent_customer['customer_email'] }}
+    with {{ frequent_customer['count(distinct ticket_id)'] }} purchases </h5>
+<h6>
+    List of their flights with us:
+    {% for flight in frequent_customer_flights %}
+    flight #: {{ flight['flight_num'] }},
+    {% endfor %}
+    <div>
+        Top Destinations:
+        {{ top_yr }}
+        {{ top_3mth }}
+    </div>
+</h6>
+ <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="static/js/bootstrap.min.js"></script>
+    <script src="static/js/Chart.min.js"></script>
+
+    <script type="text/javascript">
+    new Chart(document.getElementById("mybarchart"), {
+          type: 'bar',
+          data: {
+            labels: {{ labels }},
+            datasets: [
+              {
+                label: "Population (millions)",
+                data: {{dataset}}
+              }
+            ]
+          },
+          options: {
+            title: {
+              display: true,
+              text: 'Total Confirmed Cases of COVID in May'
+            }
+          }
+      });
+    </script>
+    <canvas id="mybarchart" width="400" height="400"></canvas>
+    <script type="text/javascript">
+
+    // This is the speed in which the loop occurs
+    loopSpeed = 5000
+
+    // Every loopSpeed milliseconds, get API data (randomized with Python)
+    // Then draw a bar graph with the data.
+
+
+      $.get( "/data", function( data ) {
+          drawChart(data.set)
+        });
+
+
+    function drawChart() {
+
+      var data = {
+          labels: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+          datasets: [
+              {
+                  label: "Random Months",
+                  fillColor: "rgba(220,220,220,0.5)",
+                  strokeColor: "rgba(220,220,220,0.8)",
+                  highlightFill: "rgba(220,220,220,0.75)",
+                  highlightStroke: "rgba(220,220,220,1)",
+                  data: set
+              }
+          ]
+      };
+
+      var ctx = document.getElementById("canvas").getContext("2d");
+
+      new Chart(ctx).Bar(data, {
+          responsive : true
+      });
+
+
+    }
+
+    </script>
+    <script
+src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
+</script>
+<script src=”https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js”></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+      google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawChart);
+
+      function drawChart() {
+
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'Pizza');
+      data.addColumn('number', 'Populartiy');
+      data.addRows([
+        ['direct', {{ rev_1mth.direct }}],
+        ['indirect', {{ rev_1mth.indirect }}],
+      ]);
+
+        var options = {
+          title: 'Revenue comparison for 1 month'
+        };
+
+        var chart = new google.visualization.PieChart(document.getElementById('piechart1mth'));
+
+        chart.draw(data, options);
+      }
+    </script>
+       <script type="text/javascript">
+      google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawChart);
+
+      function drawChart() {
+
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'Pizza');
+      data.addColumn('number', 'Populartiy');
+      data.addRows([
+        ['direct', {{ rev_1yrs.direct }}],
+        ['indirect', {{ rev_1yrs.indirect }}],
+      ]);
+
+        var options = {
+          title: 'Revenue comparison for 1 year'
+        };
+
+        var chart = new google.visualization.PieChart(document.getElementById('piechart1yr'));
+
+        chart.draw(data, options);
+      }
+    </script>
+
+    <body>
+    <script>
+    var data = {
+      // The type of chart we want to create
+      type: 'bar',
+      // The data for our dataset
+      data: {
+        labels: {{labels}},
+        datasets: [{
+          label: 'Sales',
+          backgroundColor: 'rgb(255, 99, 132)',
+          borderColor: 'rgb(255, 99, 132)',
+          data: {{dataset}}
+        }]
+      },
+
+    }
+    var ctx = document.getElementById("myChart").getContext('2d');
+    var myChart = new Chart(ctx, data);
+</script>
+</div>
+    <div id="myChart" style="width: 900px; height: 500px;"></div>
+    <div id="piechart1mth" style="width: 900px; height: 500px;"></div>
+    </br>
+    <div id="piechart1yr" style="width: 900px; height: 500px;"></div>
+    </br>
+  </body>
+<div>
+  <h3>Top Destinations in Past Year</h3>
+  <table class="table" style="color:#ffffff">
+    <thead>
+      <tr>
+        <th scope="col">Airport City</th>
+        <th scope="col">Count</th>
+
+      </tr>
+    </thead>
+    <tbody>
+    {% for location in top_yr %}
+    <tr>
+      <td>{{location.airport_city}}</td>
+      <td>{{location.coutn}}</td>
+    </tr>
+    </tbody>
+    {% endfor %}
+  </table>
+</div>
+    <div>
+  <h3>Top Destinations in Past 3 Months</h3>
+  <table class="table" style="color:#ffffff">
+    <thead>
+      <tr>
+        <th scope="col">Airport City</th>
+        <th scope="col">Count</th>
+
+      </tr>
+    </thead>
+    <tbody>
+    {% for location in top_3mth %}
+    <tr>
+      <td>{{location.airport_city}}</td>
+      <td>{{location.coutn}}</td>
+    </tr>
+    </tbody>
+    {% endfor %}
+  </table>
+</div>
+<div>
+  <h3>Top Booking Agents By Sales</h3>
+  <table class="table" style="color:#ffffff">
+    <thead>
+      <tr>
+        <th scope="col">Booking Agent ID</th>
+        <th scope="col">Sales Numbers</th>
+
+      </tr>
+    </thead>
+    <tbody>
+    {% for agent in top_by_sales %}
+    <tr>
+      <td>{{agent.booking_agent_id}}</td>
+      <td>{{agent.sales}}</td>
+    </tr>
+    </tbody>
+    {% endfor %}
+  </table>
+</div>
+</br>
+<div>
+  <h3>Top Booking Agents By Commission</h3>
+  <table class="table" style="color:#ffffff">
+    <thead>
+      <tr>
+        <th scope="col">Booking Agent ID</th>
+        <th scope="col">Commission Numbers</th>
+
+      </tr>
+    </thead>
+    <tbody>
+    {% for agent in top_by_commission %}
+    <tr>
+      <td>{{agent.booking_agent_id}}</td>
+      <td>{{agent.commission}}</td>
+    </tr>
+    </tbody>
+    {% endfor %}
+  </table>
+</div>
+
+<div>
+  <h3>My Upcoming Flight(s)</h3>
+  <table class="table" style="color:#ffffff">
+    <thead>
+      <tr>
+        <th scope="col">Ticket ID</th>
+        <th scope="col">Flight</th>
+        <th scope="col">Departure Airport</th>
+        <th scope="col">Departure Time</th>
+        <th scope="col">Arrival Airport</th>
+        <th scope="col">Arrival Time</th>
+          <th scope="col">Price ($)</th>
+          <th scope="col">Status</th>
+          <th scope="col">Airplane ID</th>
+          <th scope="col">Customers</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for line in posts %}
+    <tr>
+      <td>{{line.ticket_id}}</td>
+      <td>{{line.airline_name}} {{line.flight_num}}</td>
+      <td>{{line.departure_airport}}</td>
+      <td>{{line.departure_time}}</td>
+      <td>{{line.arrival_airport}}</td>
+      <td>{{line.arrival_time}}</td>
+        <td>{{line.price}}</td>
+    <td>{{line.status}}</td>
+    <td>{{line.airplane_id}}</td>
+    <td>
+        {% for customer in customer_flights.get(line.flight_num)  %}
+            {{ customer }},
+            {% endfor %}
+    </td>
+    </tr>
+    </tbody>
+    {% endfor %}
+  </table>
+</div>
+<br/>
+<div>
+<form class="form" method="POST">
+    {{ flights_form.hidden_tag() }}
+  <h3 class="form-heading">
+    Change View of Upcoming Flight Table:
+  </h3>
+  <h4>(Default Range is Departing Flights in the next 30 days: )</h4>
+  {{ flights_form.fromDate1(class_ = 'form-control first-input', placeholder = flights_form.fromDate1.label.text, required = true, autofocus = true) }}
+  {{ flights_form.toDate1(class_ = 'form-control last-input', placeholder = flights_form.toDate1.label.text, required = true) }}
+      {{ flights_form.submit1(class="btn btn-lg btn-block btn-primary") }}
+  </form>
+</div>
+    <br/>
+<div>
+<form class="form" method="POST">
+    {{ new_flights_form.hidden_tag() }}
+  <h3 class="form-heading">
+    Create New Flights:
+  </h3>
+  {{ new_flights_form.fromDate2(class_ = 'form-control last-input', placeholder = new_flights_form.fromDate2.label.text, required = true) }}
+    {{ new_flights_form.toDate2(class_ = 'form-control last-input', placeholder = new_flights_form.toDate2.label.text, required = true) }}
+    {{ new_flights_form.departure_airport_name(class_ = 'form-control last-input', placeholder = new_flights_form.departure_airport_name.label.text, required = true) }}
+    {{ new_flights_form.arrival_airport_name(class_ = 'form-control last-input', placeholder = new_flights_form.arrival_airport_name.label.text, required = true) }}
+    {{ new_flights_form.status1(class_ = 'form-control last-input', placeholder = new_flights_form.status1.label.text, required = true) }}
+    {{ new_flights_form.price(class_ = 'form-control last-input', placeholder = new_flights_form.price.label.text, required = true) }}
+    {{ new_flights_form.flight_num1(class_ = 'form-control last-input', placeholder = new_flights_form.flight_num1.label.text, required = true) }}
+    {{ new_flights_form.airplaneID(class_ = 'form-control last-input', placeholder = new_flights_form.airplaneID.label.text, required = true) }}
+      {{ new_flights_form.submit2(class="btn btn-lg btn-block btn-primary") }}
+  </form>
+</div>
+        <br/>
+<div>
+<form class="form" method="POST">
+    {{ status_flights_form.hidden_tag() }}
+  <h3 class="form-heading">
+    Change Flights Status:
+  </h3>
+    {{ status_flights_form.status2(class_ = 'form-control last-input', placeholder = status_flights_form.status2.label.text, required = true) }}
+    {{ status_flights_form.flight_num2(class_ = 'form-control last-input', placeholder = status_flights_form.flight_num2.label.text, required = true) }}
+      {{ status_flights_form.submit3(class="btn btn-lg btn-block btn-primary") }}
+  </form>
+</div>
+            <br/>
+<div>
+<form class="form" method="POST">
+    {{ add_airplane_form.hidden_tag() }}
+  <h3 class="form-heading">
+    Add Airplane:
+  </h3>
+  <h4>(Create Flight: )</h4>
+ {{ add_airplane_form.seats(class_ = 'form-control last-input', placeholder = add_airplane_form.seats.label.text, required = true) }}
+      {{ add_airplane_form.submit4(class="btn btn-lg btn-block btn-primary") }}
+  </form>
+</div>
+                <br/>
+<div>
+<form class="form" method="POST">
+    {{ add_airport_form.hidden_tag() }}
+  <h3 class="form-heading">
+    Create New Airport:
+  </h3>
+ {{ add_airport_form.airport_name(class_ = 'form-control last-input', placeholder = add_airport_form.airport_name.label.text, required = true) }}
+      {{ add_airport_form.city(class_ = 'form-control last-input', placeholder = add_airport_form.city.label.text, required = true) }}
+    {{ add_airport_form.submit5(class="btn btn-lg btn-block btn-primary") }}
+  </form>
+</div>
+                    <br/>
+<div>
+<form class="form" method="POST">
+    {{ reports_form.hidden_tag() }}
+  <h3 class="form-heading">
+    Get Agent Reports:
+  </h3>
+  <h4>(Report Info: )</h4>
+ {{ reports_form.fromDate3(class_ = 'form-control last-input', placeholder = reports_form.fromDate3.label.text, required = true) }}
+    {{ reports_form.toDate3(class_ = 'form-control last-input', placeholder = reports_form.toDate3.label.text, required = true) }}
+    {{ reports_form.submit6(class="btn btn-lg btn-block btn-primary") }}
+  </form>
+</div>
+                        <br/>
+<div>
+<form class="form" method="POST">
+    {{ add_agent_form.hidden_tag() }}
+  <h3 class="form-heading">
+    Add agent to Airline:
+  </h3>
+  <h4>(Agent Info: )</h4>
+ {{ add_agent_form.email2(class_ = 'form-control last-input', placeholder = add_agent_form.email2.label.text, required = true) }}
+   {{ add_agent_form.submit7(class="btn btn-lg btn-block btn-primary") }}
+  </form>
+</div>
+                            <br/>
+<div>
+<form class="form" method="POST">
+    {{ permissions_form.hidden_tag() }}
+  <h3 class="form-heading">
+    Add permission to Staff Member:
+  </h3>
+  <h4>(Staff Info: )</h4>
+ {{ permissions_form.username(class_ = 'form-control last-input', placeholder = permissions_form.username.label.text, required = true) }}
+    {{ permissions_form.usertype(class_ = 'form-control last-input', placeholder = permissions_form.usertype.label.text, required = true) }}
+    {{ permissions_form.submit8(class="btn btn-lg btn-block btn-primary") }}
+  </form>
+</div>
+{% endblock %}
