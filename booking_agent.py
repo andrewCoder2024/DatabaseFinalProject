@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, session, url_for, redirect, Blueprint
+from flask import Flask, render_template, request, session, url_for, redirect, Blueprint, flash
 import pymysql.cursors
 import datetime
 from config import app, conn, today, last1mon, last1year, last6mons, yearFromNow
@@ -73,14 +73,15 @@ def get_agent_data(username, fromDate=last1mon(), toDate=today()):
     avg_sales = cursor.fetchone()
     cursor.close()
     cursor = conn.cursor()
-    cursor.execute(q2, (fromDate, toDate, username))
+    cursor.execute(q3, (fromDate, toDate, username))
     num_sales = cursor.fetchone()
     cursor.close()
     try:
         return sum_sales['sum_sales'], \
                avg_sales['avg_sales'], \
-               num_sales['num_sales']
-    except:
+               num_sales['sales']
+    except Exception as e:
+        flash(f'{e}')
         return 0, 0, 0
 
 
@@ -136,7 +137,11 @@ def agent_home_page():
     data = flightView(username)
     if request.method == 'POST':
         if form.validate_on_submit():
+            flash("success")
+
             sum_sales, avg_sales, num_sales = get_agent_data(username, request.form['fromDate'], request.form['toDate'])
+            flash(f'{sum_sales} {avg_sales} {num_sales}')
+            flash(request.form['toDate'])
             return render_template("home/agent_home.html", username=username, form=form,
                                    sum_sales=sum_sales, avg_sales=avg_sales, num_sales=num_sales,
                                    labels1=labels1, dataset1=dataset1, labels2=labels2, dataset2=dataset2, posts=data,
@@ -144,6 +149,7 @@ def agent_home_page():
         elif flights_form.validate_on_submit():
             fromDate = flights_form['fromDate1'].data
             toDate = flights_form['toDate1'].data
+
             data = flightView(username, fromDate, toDate)
             return render_template("home/agent_home.html", username=username, form=form,
                                    sum_sales=sum_sales, avg_sales=avg_sales, num_sales=num_sales,
