@@ -6,9 +6,6 @@
   <h1>Agent {{username}}'s Homepage</h1>
 </div>
 
-    {{ labels1 }}
-    {{ dataset1 }}
-    {{ posts }}
 <div>
   <h3>My Upcoming Flight(s)</h3>
   <table class="table" style="color:white">
@@ -83,10 +80,11 @@
 </div>
 <br/>
 
-<div>
-  <h3> Sales Chart:</h3>
+    <div>
+<h2>Top Customers</h2>
+    <h3> Top by Sales :</h3>
+<canvas id="myChart1"></canvas>
 
-</div>
 
 <script>
     let labels1 = JSON.parse({{ labels1|tojson }});
@@ -99,7 +97,7 @@
         labels: labels1,
         datasets: [{
           label: 'Sales',
-          backgroundColor: 'rgb(255, 99, 132)',
+          backgroundColor: 'rgb(80, 99, 132)',
           borderColor: 'rgb(255, 99, 132)',
           data: dataset1
         }],
@@ -111,24 +109,22 @@
     var ctx1 = document.getElementById("myChart1").getContext('2d');
     var myChart1 = new Chart(ctx1, data1);
 </script>
-<canvas id="myChart1"></canvas>
-    <div>
-  <h3> Sales Chart:</h3>
-
-</div>
-
+    <h3> Top by Commission :</h3>
+<canvas id="myChart2"></canvas>
 <script>
+    let labels2 = JSON.parse({{ labels2|tojson }});
+    let dataset2 = JSON.parse({{ dataset2|tojson }});
     var data2 = {
       // The type of chart we want to create
       type: 'bar',
       // The data for our dataset
       data: {
-        labels: {{labels2|safe}},
+        labels: labels2,
         datasets: [{
           label: 'Commission',
           backgroundColor: 'rgb(255, 99, 132)',
-          borderColor: 'rgb(255, 99, 132)',
-          data: {{dataset2}}
+          borderColor: 'rgb(21, 99, 132)',
+          data: dataset2
         }]
       },
 
@@ -136,7 +132,7 @@
       options: {}
     }
     var ctx2 = document.getElementById("myChart2").getContext('2d');
-    var myChart2 = new Chart(ctx2, data);
+    var myChart2 = new Chart(ctx2, data2);
 </script>
-      <canvas id="myChart2"></canvas>
+</div>
 {% endblock %}

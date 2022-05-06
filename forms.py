@@ -135,7 +135,7 @@ class AgentReportsForm(FlaskForm):
 
 class BookingAgentAdditionForm(FlaskForm):
     email2 = StringField(label='Email Address:', validators=[Email(), DataRequired()])
-    submit7 = SubmitField(label='Purchase Flight for Customer!')
+    submit7 = SubmitField(label='Add Agent!')
 
 
 class AgentPermissionsForm(FlaskForm):
@@ -143,4 +143,4 @@ class AgentPermissionsForm(FlaskForm):
     usertype = SelectField('Permission',
                            choices=['Operator', 'Admin'],
                            validators=[DataRequired()])
-    submit8 = SubmitField(label='Purchase Flight for Customer!')
+    submit8 = SubmitField(label='Give Permission!')

@@ -38,7 +38,7 @@ Flight Search Result
                <td>{{ airplane_id }}</td>
                 {% if session.get('usertype')=='customer' %}
 	            <td>
-                  <button class="btn btn-outline btn-success" data-toggle="modal" data-target="#Modal-PurchaseConfirm-{{ flight_num }}">Purchase this Item</button>
+                  <button class="btn btn-outline btn-info" data-toggle="modal" data-target="#Modal-Purchase-{{ flight_num }}">Purchase</button>
                </td>
                 {% elif session.get('usertype') == 'agent' %}
                     <td>

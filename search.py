@@ -52,7 +52,9 @@ def search_page():
                     cursor.execute(q, (fromCity, fromAirport, fromDate, toDate, toCity, toAirport))
                     data = cursor.fetchone()
                     cursor.close()
-                    flash("flight found", category="success")
+                    if data:
+
+                        flash("flight found", category="success")
                     '''
                     data_dict = {'airline_name': data['airline_name'], 'flight_num': data['flight_num'],
                                  'departure_airport': data['departure_airport'], 'departure_time': data['departure_time'],
@@ -60,11 +62,11 @@ def search_page():
                                  'price': data['price'], 'airplane_id':data['airplane_id']}
                     '''
                     return redirect(url_for('search.search_result', airline_name=data['airline_name'],
-                                     flight_num=data['flight_num'],
-                                     departure_airport=data['departure_airport'], departure_time=data['departure_time'],
-                                     arrival_airport=data['arrival_airport'], arrival_time=data['arrival_time'],
-                                     price=data['price'], airplane_id=data['airplane_id']))
-                    flash("redirect failed", category='danger')
+                                            flight_num=data['flight_num'],
+                                            departure_airport=data['departure_airport'],
+                                            departure_time=data['departure_time'],
+                                            arrival_airport=data['arrival_airport'], arrival_time=data['arrival_time'],
+                                            price=data['price'], airplane_id=data['airplane_id']))
                 except Exception as e:
                     print(e)
                     flash(f"No flight found! Please try again", category='danger')
@@ -82,7 +84,7 @@ def search_result():
     arrival_airport = request.args['arrival_airport']
     arrival_time = request.args['arrival_time']
     price = request.args['price']
-    username = session['username']
+    username = session.get('username')
     booking_agent_id = None
     if request.method == "POST":
         try:
@@ -90,7 +92,7 @@ def search_result():
                 booking_agent_id = getAgentID(username)
                 flash("success 1")
                 if purchase_form.validate_on_submit():
-                    
+
                     flash("success 2")
                     agent_q = """SELECT airline_name FROM booking_agent natural join 
                     booking_agent_work_for where airline_name = %s and email = %s """

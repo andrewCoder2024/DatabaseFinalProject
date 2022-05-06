@@ -7,7 +7,7 @@
 </div>
 <div>
   <h3>My Upcoming Flight(s)</h3>
-  <table class="table">
+  <table class="table" style = "color:#ffffff">
     <thead>
       <tr>
         <th scope="col">Ticket ID</th>
@@ -36,14 +36,14 @@
 
 <div>
   <form class="form" method="POST">
+      {{ form.hidden_tag() }}
   <h3 class="form-heading">
     My Spending is: <strong> {{mySpending}} </strong>
   </h3>
-  <h4>(Default Range is last 6 month, or choose range in between: )</h4>
+  <h4>(Default Range is last year, can also choose a range in between: )</h4>
   {{ form.fromDate(class_ = 'form-control first-input', placeholder = form.fromDate.label.text, required = true, autofocus = true) }}
   {{ form.toDate(class_ = 'form-control last-input', placeholder = form.toDate.label.text, required = true) }}
 
-  <input type="submit" value="Select Range" class="btn btn-primary btn-lg btn-block" >
       {{ form.submit(class="btn btn-lg btn-block btn-primary") }}
   </form>
 </div>
@@ -51,29 +51,32 @@
 
 <div>
   <h3> Sales Chart:</h3>
-  <canvas id="myChart"></canvas>
-</div>
 
+</div>
+{% if data is defined%}
+  <canvas id="myChart1"></canvas>
 <script>
-    var data = {
+    let labels1 = JSON.parse({{ labels|tojson }});
+    let dataset1 = JSON.parse({{ data|tojson }});
+    var data1 = {
       // The type of chart we want to create
       type: 'bar',
       // The data for our dataset
       data: {
-        labels: {{labels|safe}},
+        labels: labels1,
         datasets: [{
           label: 'Sales',
-          backgroundColor: 'rgb(255, 99, 132)',
+          backgroundColor: 'rgb(80, 99, 132)',
           borderColor: 'rgb(255, 99, 132)',
-          data: {{dataset}}
-        }]
+          data: dataset1
+        }],
       },
 
       // Configuration options go here
       options: {}
     }
-    var ctx = document.getElementById("myChart").getContext('2d');
-    var myChart = new Chart(ctx, data);
+    var ctx1 = document.getElementById("myChart1").getContext('2d');
+    var myChart1 = new Chart(ctx1, data1);
 </script>
-
+{% endif %}
 {% endblock %}

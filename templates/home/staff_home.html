@@ -11,77 +11,36 @@
     {% for flight in frequent_customer_flights %}
     flight #: {{ flight['flight_num'] }},
     {% endfor %}
-    <div>
-        Top Destinations:
-        {{ top_yr }}
-        {{ top_3mth }}
-    </div>
 </h6>
- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
     <script src="static/js/bootstrap.min.js"></script>
     <script src="static/js/Chart.min.js"></script>
+    {% if labels %}
+    <canvas id="myChart1" width="200" height="200"></canvas>
+    <script>
+    let labels1 = JSON.parse({{ labels|tojson }});
+    let dataset1 = JSON.parse({{ dataset|tojson }});
+    var data1 = {
+      // The type of chart we want to create
+      type: 'bar',
+      // The data for our dataset
+      data: {
+        labels: labels1,
+        datasets: [{
+          label: 'Sales',
+          backgroundColor: 'rgb(80, 99, 132)',
+          borderColor: 'rgb(255, 99, 132)',
+          data: dataset1
+        }],
+      },
 
-    <script type="text/javascript">
-    new Chart(document.getElementById("mybarchart"), {
-          type: 'bar',
-          data: {
-            labels: {{ labels }},
-            datasets: [
-              {
-                label: "Population (millions)",
-                data: {{dataset}}
-              }
-            ]
-          },
-          options: {
-            title: {
-              display: true,
-              text: 'Total Confirmed Cases of COVID in May'
-            }
-          }
-      });
-    </script>
-    <canvas id="mybarchart" width="400" height="400"></canvas>
-    <script type="text/javascript">
-
-    // This is the speed in which the loop occurs
-    loopSpeed = 5000
-
-    // Every loopSpeed milliseconds, get API data (randomized with Python)
-    // Then draw a bar graph with the data.
-
-
-      $.get( "/data", function( data ) {
-          drawChart(data.set)
-        });
-
-
-    function drawChart() {
-
-      var data = {
-          labels: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-          datasets: [
-              {
-                  label: "Random Months",
-                  fillColor: "rgba(220,220,220,0.5)",
-                  strokeColor: "rgba(220,220,220,0.8)",
-                  highlightFill: "rgba(220,220,220,0.75)",
-                  highlightStroke: "rgba(220,220,220,1)",
-                  data: set
-              }
-          ]
-      };
-
-      var ctx = document.getElementById("canvas").getContext("2d");
-
-      new Chart(ctx).Bar(data, {
-          responsive : true
-      });
-
-
+      // Configuration options go here
+      options: {}
     }
-
-    </script>
+    var ctx1 = document.getElementById("myChart1").getContext('2d');
+    var myChart1 = new Chart(ctx1, data1);
+</script>
+    {% endif %}
     <script
 src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
 </script>
@@ -135,26 +94,7 @@ src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
     </script>
 
     <body>
-    <script>
-    var data = {
-      // The type of chart we want to create
-      type: 'bar',
-      // The data for our dataset
-      data: {
-        labels: {{labels}},
-        datasets: [{
-          label: 'Sales',
-          backgroundColor: 'rgb(255, 99, 132)',
-          borderColor: 'rgb(255, 99, 132)',
-          data: {{dataset}}
-        }]
-      },
 
-    }
-    var ctx = document.getElementById("myChart").getContext('2d');
-    var myChart = new Chart(ctx, data);
-</script>
-</div>
     <div id="myChart" style="width: 900px; height: 500px;"></div>
     <div id="piechart1mth" style="width: 900px; height: 500px;"></div>
     </br>
@@ -175,7 +115,7 @@ src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
     {% for location in top_yr %}
     <tr>
       <td>{{location.airport_city}}</td>
-      <td>{{location.coutn}}</td>
+      <td>{{location.count}}</td>
     </tr>
     </tbody>
     {% endfor %}
@@ -195,7 +135,7 @@ src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
     {% for location in top_3mth %}
     <tr>
       <td>{{location.airport_city}}</td>
-      <td>{{location.coutn}}</td>
+      <td>{{location.count}}</td>
     </tr>
     </tbody>
     {% endfor %}
@@ -248,7 +188,6 @@ src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
   <table class="table" style="color:#ffffff">
     <thead>
       <tr>
-        <th scope="col">Ticket ID</th>
         <th scope="col">Flight</th>
         <th scope="col">Departure Airport</th>
         <th scope="col">Departure Time</th>
@@ -263,7 +202,6 @@ src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
     <tbody>
     {% for line in posts %}
     <tr>
-      <td>{{line.ticket_id}}</td>
       <td>{{line.airline_name}} {{line.flight_num}}</td>
       <td>{{line.departure_airport}}</td>
       <td>{{line.departure_time}}</td>

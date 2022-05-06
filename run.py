@@ -17,4 +17,4 @@ conn = sql.connect(host='127.0.0.1',
 
 #Checks if the run.py file has executed directly and not imported
 if __name__ == '__main__':
-    app.run(debug=True, port=9999)
+    app.run(debug=True, port=9997)

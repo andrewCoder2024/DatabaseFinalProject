@@ -1,4 +1,5 @@
 import datetime
+import json
 
 from config import app, conn,today,last1mon,last1year,last6mons
 from flask import render_template, redirect, url_for, flash, request, session, Blueprint
@@ -15,16 +16,16 @@ def total_spending(username, from_date=None, to_date=None):
     from_date = from_date if from_date else last1year()
     to_date = to_date if from_date else today()
     query = """select SUM(flight.price) as spend from customer 
-               inner join purchases on email=customer_email 
+               natural join purchases
                natural join ticket natural join flight 
-               where name = 'Customer'
+               where email = %s
                and purchase_date BETWEEN date_sub(%s, INTERVAL 2 DAY) AND date_sub(%s, INTERVAL 2 DAY)
             """
     cursor.execute(query, (username, from_date, to_date))
     data = cursor.fetchone()
     cursor.close()
     try:
-        return data['TotalSpending']
+        return data['spend']
     except:
         return "Null"
 
@@ -35,9 +36,9 @@ def get_spending_spread(username, from_date=None, to_date=None):
     to_date = to_date if from_date else today()
     query = """ select SUM(price) as spend, YEAR(purchase_date) as year, 
                 MONTH(purchase_date) as month from customer 
-                inner join purchases on email=customer_email 
+                natural join purchases 
                 natural join ticket natural join flight 
-                where name = %s
+                where email = %s
                 and purchase_date between date_sub(%s, INTERVAL 2 DAY) 
                 and date_sub(%s, INTERVAL 2 DAY)
                 GROUP BY year, month
@@ -58,6 +59,9 @@ def get_spending_spread(username, from_date=None, to_date=None):
 
 @customer_bp.route('/', methods=['GET', 'POST'])
 def customer_home_page():
+    if session.get('usertype') != 'customer':
+        flash("You do not have access to this webpage!", category='danger')
+        return redirect(url_for('home_page'))
     username = session["username"]
 
     q = """
@@ -86,9 +90,22 @@ def customer_home_page():
         toDate = form['toDate'].data
         mySpending = total_spending(username, fromDate, toDate)
         labels, datas = get_spending_spread(username, fromDate, toDate)
+        if not labels:
+            labels, datas = None, None
+        else:
+            labels, datas = json.dumps(labels), json.dumps(datas)
+        flash("input success", category='success')
+        return render_template("home/customer_home.html", username=username, posts=data, form=form,
+                               mySpending=mySpending,
+                               labels=labels, data=datas)
     else:
         mySpending = total_spending(username)
         labels, datas = get_spending_spread(username)
+        if not labels:
+            labels, datas = None, None
+        else:
+            labels, datas = json.dumps(labels), json.dumps(datas)
+        return render_template("home/customer_home.html", username=username, posts=data, form=form,
+                               mySpending=mySpending,
+                               labels=labels, data=datas)
 
-    return render_template("home/customer_home.html", username=username, posts=data, form=form, mySpending=mySpending,
-                           labels=labels, data=datas)

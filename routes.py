@@ -51,6 +51,12 @@ def login_page():
 
 @app.route('/logout')
 def logout_page():
-    session.clear()
-    flash("You have been logged out!", category='info')
-    return redirect(url_for("home_page"))
+    if session:
+        session.clear()
+        flash("You have been logged out!", category='info')
+        return redirect(url_for("home_page"))
+    else:
+        session.clear()
+        flash("You have not logged in yet!", category='info')
+        return redirect(url_for("home_page"))
+

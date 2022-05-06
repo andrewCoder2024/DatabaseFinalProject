@@ -127,6 +127,9 @@ def top_customers(username):
 
 @booking_agent_bp.route('/', methods=['GET', 'POST'])
 def agent_home_page():
+    if session.get('usertype') != 'agent':
+        flash("You do not have access to this webpage!", category='danger')
+        return redirect(url_for('home_page'))
     username = session['username']
     form = AgentSalesForm()
     flights_form = AgentFlightsForm()

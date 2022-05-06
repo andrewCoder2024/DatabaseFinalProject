@@ -2,7 +2,7 @@ import json
 from datetime import date, timedelta
 
 import plotly
-from flask import session, request, flash, render_template, Blueprint, jsonify, Markup
+from flask import session, request, flash, render_template, Blueprint, jsonify, Markup, redirect, url_for
 from config import app, conn, today, last1mon, last1year, last6mons
 from forms import AgentFlightsForm, CreateFlightsForm, ChangeFlightsStatus, AddAirplaneForm, AddAirportForm, \
     AgentReportsForm, BookingAgentAdditionForm, AgentPermissionsForm
@@ -28,7 +28,7 @@ def perm_fail(): flash('You do not meet the requisite conditions for this action
 
 def grant_perms(username, permission):
     try:
-        q = """INSERT INTO `permission` (`username`, `permission_type`) VALUES ('', '')"""
+        q = """INSERT INTO `permission` (`username`, `permission_type`) VALUES (%s, %s)"""
         cursor = conn.cursor()
         cursor.execute(q, (username, permission))
         cursor.close()
@@ -44,11 +44,14 @@ def add_agents(email, airline_name):
     data = cursor.fetchall()
     cursor.close()
     if data:
-        q2 = """INSERT INTO `booking_agent_work_for` (`email`, `airline_name`) VALUES ('', '')"""
-        cursor = conn.cursor()
-        cursor.execute(q2, (email, airline_name))
-        cursor.close()
-        flash(f"Agent with email: {email} has been employed to the airline!", category='success')
+        try:
+            q2 = """INSERT INTO `booking_agent_work_for` (`email`, `airline_name`) VALUES (%s, %s)"""
+            cursor = conn.cursor()
+            cursor.execute(q2, (email, airline_name))
+            cursor.close()
+            flash(f"Agent with email: {email} has been employed to the airline!", category='success')
+        except Exception as e:
+            flash(f'{e}', category='danger')
     else:
         flash(f'No agent found with email {email}', category='danger')
 
@@ -94,9 +97,8 @@ def getStaffAirline(username):
 def add_flight(airline_name, flight_num, departure_airport, departure_time, arrival_airport, arrival_time, price,
                status, airplane_id):
     try:
-        q = """INSERT INTO `flight` (`airline_name`, `flight_num`, `
-        departure_airport`, `departure_time`, `
-        arrival_airport`, 
+        q = """INSERT INTO `flight` (`airline_name`, `flight_num`, 
+        `departure_airport`, `departure_time`, `arrival_airport`, 
         `arrival_time`, `price`, `status`, `airplane_id`) 
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
         cursor = conn.cursor()
@@ -128,10 +130,8 @@ def getReport(airline, fromDate=last6mons(), toDate=today()):
         data = int(line['sales'])
         labels.append(label)
         dataset.append(data)
-    df = pd.DataFrame()
-    df['labels'] = labels
-    df['data'] = dataset
-    return df, labels, dataset
+
+    return labels, dataset
 
 
 def getTopDestinations(airline):
@@ -159,26 +159,28 @@ CURRENT_DATE GROUP by airport_city ORDER by count DESC LIMIT 3
 
 
 def default_customer_view(username):
-    q = """SELECT purchases.ticket_id,
+    q = """SELECT distinct ticket.flight_num,
+                                flight.airplane_id, 
+                                purchases.ticket_id,
                                 ticket.airline_name,
-                                ticket.flight_num,
                                 flight.departure_airport,
                                 flight.departure_time,
                                 flight.arrival_airport,
                                 flight.arrival_time,
                                 flight.price,
-                                flight.status,
-                                flight.airplane_id
+                                flight.status
+                                
                             FROM flight natural join purchases NATURAL join ticket natural join airline_staff
                             where airline_staff.username = %s
                             AND departure_time between date_sub(CURRENT_DATE, INTERVAL 2 DAY) 
-                        and date_sub(CURRENT_DATE + INTERVAL 30 day, INTERVAL 2 DAY) """
+                        and date_sub(CURRENT_DATE + INTERVAL 30 day, INTERVAL 2 DAY) 
+                        group by flight_num;"""
     cursor = conn.cursor()
     cursor.execute(q, username)
     data = cursor.fetchall()
     cursor.close()
     customer_flights = {}
-    q = """select customer_email from ticket natural join purchases natural join customer where flight_num = 
+    q = """select distinct customer_email from ticket natural join purchases natural join customer where flight_num = 
                 %s """
     for line in data:
         flight_num = line['flight_num']
@@ -275,6 +277,9 @@ def most_frequent_customer(username, airline_name):
 
 @staff_bp.route('/', methods=['GET', 'POST'])
 def staff_home_page():
+    if session.get('usertype') != 'staff':
+        flash("You do not have access to this webpage!", category='danger')
+        return redirect(url_for('home_page'))
     reports_plot = None
     labels = None
     dataset = None
@@ -288,6 +293,7 @@ def staff_home_page():
     add_agent_form = BookingAgentAdditionForm()
     permissions_form = AgentPermissionsForm()
     permissions = get_perms(username)
+    flash(permissions, category='success')
     airline_name = getStaffAirline(username)
     data, customer_flights = default_customer_view(username)
     frequent_customer, frequent_customer_flights = most_frequent_customer(username, airline_name)
@@ -298,9 +304,9 @@ def staff_home_page():
         if flights_form.validate_on_submit():
             flash("post")
             try:
-                q = """SELECT purchases.ticket_id,
+                q = """SELECT distinct ticket.flight_num,
                                 ticket.airline_name,
-                                ticket.flight_num,
+                                
                                 flight.departure_airport,
                                 flight.departure_time,
                                 flight.arrival_airport,
@@ -310,7 +316,8 @@ def staff_home_page():
                                 flight.airplane_id
                             FROM flight natural join purchases NATURAL join ticket natural join airline
                             where airline_name = %s  and departure_time between date_sub(%s, INTERVAL 2 DAY) 
-                        and date_sub(%s, INTERVAL 2 DAY) """
+                        and date_sub(%s, INTERVAL 2 DAY) 
+                        group by flight_num;"""
                 fromDate = flights_form['fromDate1'].data
                 toDate = flights_form['toDate1'].data
                 cursor = conn.cursor()
@@ -332,7 +339,7 @@ def staff_home_page():
                 return render_template("home/staff_home.html", username=username, posts=data,
                                        customer_flights=customer_flights,
                                        frequent_customer=frequent_customer,
-                                       rev_1mth=[[key, value] for key, value in rev_1mth.items()],
+                                       rev_1mth=rev_1mth,
                                        rev_1yrs=rev_1yrs, top_by_sales=top_by_sales,
                                        top_by_commission=top_by_commission, top_3mth=top_3mth, top_yr=top_yr,
                                        flights_form=flights_form, new_flights_form=new_flights_form,
@@ -362,7 +369,7 @@ def staff_home_page():
                     perm_fail()
             elif status_flights_form.validate_on_submit():
                 if "Operator" in permissions:
-                    status = status_flights_form['status3'].data
+                    status = status_flights_form['status2'].data
                     flight_num = status_flights_form['flight_num2'].data
                     change_flight_status(airline_name, status, flight_num)
                 else:
@@ -375,21 +382,16 @@ def staff_home_page():
                     perm_fail()
             elif add_airport_form.validate_on_submit():
                 if "Admin" in permissions:
-                    airport_name = add_airport_form['airport_name']
-                    city = add_airport_form['city']
+                    airport_name = add_airport_form['airport_name'].data
+                    city = add_airport_form['city'].data
                     create_airport(airport_name, city)
                 else:
                     perm_fail()
             elif reports_form.validate_on_submit():
                 fromDate = reports_form['fromDate3'].data
                 toDate = reports_form['toDate3'].data
-                reports_df, labels, dataset = getReport(airline_name, fromDate, toDate)
-                reports_plot = reports_df.to_json
-                trace1 = go.Bar(x=reports_df["labels"], y=reports_df["data"])
-                layout = go.Layout(title="Revenue Per Month", xaxis=dict(title="Date"),
-                                   yaxis=dict(title="Revenue Per Month"), )
-                graph_data = [trace1]
-                fig = go.Figure(data=graph_data, layout=layout)
+                labels, dataset = getReport(airline_name, fromDate, toDate)
+                labels, dataset = json.dumps(labels), json.dumps(dataset)
                 return render_template("home/staff_home.html", username=username, posts=data,
                                        customer_flights=customer_flights,
                                        frequent_customer=frequent_customer, rev_1mth=rev_1mth,
