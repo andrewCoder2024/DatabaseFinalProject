@@ -31,6 +31,7 @@ def grant_perms(username, permission):
         q = """INSERT INTO `permission` (`username`, `permission_type`) VALUES (%s, %s)"""
         cursor = conn.cursor()
         cursor.execute(q, (username, permission))
+        conn.commit()
         cursor.close()
         flash(f"Permission {permission} has been granted to staff {username}!", category='success')
     except Exception as e:
@@ -48,6 +49,7 @@ def add_agents(email, airline_name):
             q2 = """INSERT INTO `booking_agent_work_for` (`email`, `airline_name`) VALUES (%s, %s)"""
             cursor = conn.cursor()
             cursor.execute(q2, (email, airline_name))
+            conn.commit()
             cursor.close()
             flash(f"Agent with email: {email} has been employed to the airline!", category='success')
         except Exception as e:
@@ -72,9 +74,12 @@ def change_flight_status(airline_name, status, flight_num):
 def create_airplane(airline, seats):
     try:
         cursor = conn.cursor()
-        q_id = """select max(airplane_id)+1 from airplane"""
+        q_id = """select max(airplane_id)+1 as airplane_id from airplane"""
+        flash("success")
         cursor.execute(q_id)
-        airplane_id = cursor.fetchone()
+        airplane_id = cursor.fetchone()['airplane_id']
+        flash(airplane_id)
+        flash("success 2")
         query = """
                     INSERT INTO airplane VALUES(%s, %s, %s)  """
         cursor.execute(query, (airline, airplane_id, seats))
@@ -105,8 +110,22 @@ def add_flight(airline_name, flight_num, departure_airport, departure_time, arri
         cursor.execute(q, (
             airline_name, flight_num, departure_airport, departure_time, arrival_airport, arrival_time, price, status,
             airplane_id))
+        conn.commit()
         cursor.close()
-        flash(f"Flight with number {flight_num} has been created!", category='success')
+        q = """select * from flight where airline_name = %s and flight_num = %s and departure_airport = %s and
+               departure_time = %s and arrival_airport= %s and arrival_time= %s 
+               and price= %s and status= %s and airplane_id= %s"""
+        cursor = conn.cursor()
+        cursor.execute(q, (
+            airline_name, flight_num, departure_airport, departure_time, arrival_airport, arrival_time, price, status,
+            airplane_id))
+        data = cursor.fetchall()
+        cursor.close()
+        if data:
+            flash(data)
+            flash(f"Flight with number {flight_num} has been created!", category='success')
+        else:
+            flash("error", category='danger')
     except Exception as e:
         flash(f'{e}', category='danger')
 
@@ -116,7 +135,7 @@ def getReport(airline, fromDate=last6mons(), toDate=today()):
     query = """SELECT YEAR(purchase_date) as year, MONTH(purchase_date) as month, COUNT(ticket_id) as sales
                 FROM purchases NATURAL JOIN ticket JOIN flight USING(airline_name, flight_num)
                     WHERE  airline_name = %s
-                    AND purchase_date BETWEEN date_sub(%s, INTERVAL 2 DAY) AND date_sub(%s, INTERVAL 2 DAY)
+                    AND purchase_date between %s and %s
                 GROUP BY year, month
             """
     cursor.execute(query, (airline, fromDate, toDate))
@@ -158,25 +177,22 @@ CURRENT_DATE GROUP by airport_city ORDER by count DESC LIMIT 3
     return top_3_mths, top_year
 
 
-def default_customer_view(username):
-    q = """SELECT distinct ticket.flight_num,
-                                flight.airplane_id, 
-                                purchases.ticket_id,
-                                ticket.airline_name,
+def default_customer_view(airline_name):
+    q = """SELECT distinct flight.flight_num,
+                                flight.airline_name,
                                 flight.departure_airport,
                                 flight.departure_time,
                                 flight.arrival_airport,
                                 flight.arrival_time,
                                 flight.price,
-                                flight.status
-                                
-                            FROM flight natural join purchases NATURAL join ticket natural join airline_staff
-                            where airline_staff.username = %s
-                            AND departure_time between date_sub(CURRENT_DATE, INTERVAL 2 DAY) 
-                        and date_sub(CURRENT_DATE + INTERVAL 30 day, INTERVAL 2 DAY) 
+                                flight.status,
+                                flight.airplane_id
+                            FROM flight 
+                            where airline_name = %s AND departure_time between current_date 
+                        and CURRENT_DATE + INTERVAL 30 day
                         group by flight_num;"""
     cursor = conn.cursor()
-    cursor.execute(q, username)
+    cursor.execute(q,airline_name)
     data = cursor.fetchall()
     cursor.close()
     customer_flights = {}
@@ -248,6 +264,11 @@ def create_airport(name, city):
         cursor.execute(query, (name, city))
         conn.commit()
         cursor.close()
+        cursor = conn.cursor()
+        query = """select * from airport where airport_name=%s and airport_city=%s"""
+        cursor.execute(query, (name, city))
+        conn.commit()
+        cursor.close()
         flash(f"Airport with name {name} has been created!", category='success')
     except Exception as e:
         flash(f'{e}', category='danger')
@@ -295,7 +316,7 @@ def staff_home_page():
     permissions = get_perms(username)
     flash(permissions, category='success')
     airline_name = getStaffAirline(username)
-    data, customer_flights = default_customer_view(username)
+    data, customer_flights = default_customer_view(airline_name)
     frequent_customer, frequent_customer_flights = most_frequent_customer(username, airline_name)
     rev_1mth, rev_1yrs = getRevenue(airline_name)
     top_by_sales, top_by_commission = view_booking_agents()
@@ -304,9 +325,8 @@ def staff_home_page():
         if flights_form.validate_on_submit():
             flash("post")
             try:
-                q = """SELECT distinct ticket.flight_num,
-                                ticket.airline_name,
-                                
+                q = """SELECT distinct flight.flight_num,
+                                flight.airline_name, 
                                 flight.departure_airport,
                                 flight.departure_time,
                                 flight.arrival_airport,
@@ -314,9 +334,9 @@ def staff_home_page():
                                 flight.price,
                                 flight.status,
                                 flight.airplane_id
-                            FROM flight natural join purchases NATURAL join ticket natural join airline
-                            where airline_name = %s  and departure_time between date_sub(%s, INTERVAL 2 DAY) 
-                        and date_sub(%s, INTERVAL 2 DAY) 
+                            FROM flight 
+                            where airline_name = %s AND departure_time 
+                            between %s and %s
                         group by flight_num;"""
                 fromDate = flights_form['fromDate1'].data
                 toDate = flights_form['toDate1'].data
@@ -338,15 +358,16 @@ def staff_home_page():
                         customer_flights[flight_num].append(customer["customer_email"])
                 return render_template("home/staff_home.html", username=username, posts=data,
                                        customer_flights=customer_flights,
-                                       frequent_customer=frequent_customer,
-                                       rev_1mth=rev_1mth,
+                                       frequent_customer=frequent_customer, rev_1mth=rev_1mth,
                                        rev_1yrs=rev_1yrs, top_by_sales=top_by_sales,
                                        top_by_commission=top_by_commission, top_3mth=top_3mth, top_yr=top_yr,
                                        flights_form=flights_form, new_flights_form=new_flights_form,
                                        status_flights_form=status_flights_form, add_airplane_form=add_airplane_form,
-                                       add_airport_form=add_airport_form, reports_plot=reports_plot,
+                                       add_airport_form=add_airport_form, reports_form=reports_form,
                                        add_agent_form=add_agent_form,
-                                       permissions_form=permissions_form, labels=labels, dataset=dataset
+                                       permissions_form=permissions_form, reports_plot=reports_plot,
+                                       frequent_customer_flights=frequent_customer_flights,
+                                       labels=labels, dataset=dataset
                                        )
             except Exception as e:
                 flash(f'{e}', category='danger')

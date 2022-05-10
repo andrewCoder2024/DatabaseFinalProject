@@ -18,7 +18,7 @@ def getAgentID(username):
     return data['booking_agent_id']
 
 
-def flightView(username, fromDate=today(), toDate=yearFromNow):
+def flightView(username, fromDate=today(), toDate=yearFromNow()):
     q = """SELECT distinct purchases.ticket_id,
                                     ticket.airline_name,
                                     ticket.flight_num,
@@ -41,39 +41,29 @@ def flightView(username, fromDate=today(), toDate=yearFromNow):
 
 
 def get_agent_data(username, fromDate=last1mon(), toDate=today()):
+    id = getAgentID(username)
     cursor = conn.cursor()
-    q1 = """SELECT sum(price) as sum_sales
-                FROM booking_agent NATURAL JOIN 
-                purchases NATURAL JOIN ticket
-                natural join flight 
-                WHERE purchase_date BETWEEN date_sub(%s, INTERVAL 2 DAY) AND date_sub(%s,INTERVAL 2 DAY)
-                    GROUP by email
-                    having email = %s
+    q1 = """SELECT sum(price) as sum_sales FROM purchases 
+    natural join ticket natural join flight 
+    where booking_agent_id = %s 
+    and purchase_date BETWEEN %s and %s 
             """
     q2 = """SELECT avg(price) as avg_sales
-                FROM booking_agent NATURAL JOIN 
-                purchases NATURAL JOIN ticket
-                natural join flight 
-                WHERE purchase_date BETWEEN date_sub(%s, INTERVAL 2 DAY) AND date_sub(%s,INTERVAL 2 DAY)
-                    GROUP by email
-                    having email = %s"""
+                FROM purchases natural join ticket natural join flight where booking_agent_id = %s 
+                and purchase_date BETWEEN %s and %s"""
     q3 = """SELECT COUNT(price) as sales
-                FROM booking_agent NATURAL JOIN 
-                purchases NATURAL JOIN ticket
-                natural join flight 
-                WHERE purchase_date BETWEEN date_sub(%s, INTERVAL 2 DAY) AND date_sub(%s,INTERVAL 2 DAY)
-                    GROUP by email
-                    having email = %s
+                FROM purchases natural join ticket natural join flight where booking_agent_id = %s 
+                and purchase_date BETWEEN %s and %s
             """
-    cursor.execute(q1, (fromDate, toDate, username))
+    cursor.execute(q1, (id, fromDate, toDate))
     sum_sales = cursor.fetchone()
     cursor.close()
     cursor = conn.cursor()
-    cursor.execute(q2, (fromDate, toDate, username))
+    cursor.execute(q2, (id,fromDate, toDate))
     avg_sales = cursor.fetchone()
     cursor.close()
     cursor = conn.cursor()
-    cursor.execute(q3, (fromDate, toDate, username))
+    cursor.execute(q3, (id,fromDate, toDate))
     num_sales = cursor.fetchone()
     cursor.close()
     try:
@@ -81,11 +71,10 @@ def get_agent_data(username, fromDate=last1mon(), toDate=today()):
                avg_sales['avg_sales'], \
                num_sales['sales']
     except Exception as e:
-        flash(f'{e}')
+        flash(f'exception: {e}')
         return 0, 0, 0
 
 
-# tickets 6 commission year
 def top_customers(username):
     q1 = """SELECT customer_email, COUNT(ticket_id) as top_sale
                             FROM booking_agent NATURAL JOIN purchases NATURAL JOIN ticket
@@ -143,7 +132,6 @@ def agent_home_page():
             flash("success")
 
             sum_sales, avg_sales, num_sales = get_agent_data(username, request.form['fromDate'], request.form['toDate'])
-            flash(f'{sum_sales} {avg_sales} {num_sales}')
             flash(request.form['toDate'])
             return render_template("home/agent_home.html", username=username, form=form,
                                    sum_sales=sum_sales, avg_sales=avg_sales, num_sales=num_sales,

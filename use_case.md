@@ -139,8 +139,7 @@ select SUM(price) as spend, YEAR(purchase_date) as year,
                 natural join purchases 
                 natural join ticket natural join flight 
                 where email = %s
-                and purchase_date between date_sub(%s, INTERVAL 2 DAY) 
-                and date_sub(%s, INTERVAL 2 DAY)
+                and purchase_date between %s and %s
                 GROUP BY year, month
                 ORDER BY purchases.purchase_date
 ```
@@ -150,7 +149,7 @@ select SUM(flight.price) as spend from customer
                natural join purchases
                natural join ticket natural join flight 
                where email = %s
-               and purchase_date BETWEEN date_sub(%s, INTERVAL 2 DAY) AND date_sub(%s, INTERVAL 2 DAY)
+               and purchase_date BETWEEN %s and %s
 ```
 As well as total money spent within the same time frame 
 
@@ -181,8 +180,7 @@ SELECT distinct purchases.ticket_id,
                                     flight.status,
                                     flight.airplane_id
                                 FROM flight natural join purchases NATURAL join ticket natural join booking_agent
-                                Where booking_agent_id = %s and departure_time between date_sub(%s, INTERVAL 2 DAY) 
-                            and date_sub(%s, INTERVAL 2 DAY)  
+                                Where booking_agent_id = %s and departure_time between %s and %s  
 ```
 View Flights between user entered dates with matching agent id number for the purchases
 
@@ -249,7 +247,7 @@ SELECT sum(price) as sum_sales
                 FROM booking_agent NATURAL JOIN 
                 purchases NATURAL JOIN ticket
                 natural join flight 
-                WHERE purchase_date BETWEEN date_sub(%s, INTERVAL 2 DAY) AND date_sub(%s,INTERVAL 2 DAY)
+                WHERE purchase_date BETWEEN %s and %s
                     GROUP by email
                     having email = %s
 ```
@@ -259,7 +257,7 @@ SELECT avg(price) as avg_sales
                 FROM booking_agent NATURAL JOIN 
                 purchases NATURAL JOIN ticket
                 natural join flight 
-                WHERE purchase_date BETWEEN date_sub(%s, INTERVAL 2 DAY) AND date_sub(%s,INTERVAL 2 DAY)
+                WHERE purchase_date BETWEEN %s and %s
                     GROUP by email
                     having email = %s
 ```
@@ -269,7 +267,7 @@ SELECT COUNT(price) as sales
                 FROM booking_agent NATURAL JOIN 
                 purchases NATURAL JOIN ticket
                 natural join flight 
-                WHERE purchase_date BETWEEN date_sub(%s, INTERVAL 2 DAY) AND date_sub(%s,INTERVAL 2 DAY)
+                WHERE purchase_date BETWEEN %s and %s
                     GROUP by email
                     having email = %s
 ```
@@ -321,8 +319,7 @@ SELECT distinct ticket.flight_num,
                                 flight.status,
                                 flight.airplane_id
                             FROM flight natural join purchases NATURAL join ticket natural join airline
-                            where airline_name = %s  and departure_time between date_sub(%s, INTERVAL 2 DAY) 
-                        and date_sub(%s, INTERVAL 2 DAY) 
+                            where airline_name = %s  and departure_time between %s and %s
                         group by flight_num;
 ```
 View flights based upon given departure and arrival dates for a given airline
@@ -414,15 +411,15 @@ SELECT YEAR(purchase_date) as year, MONTH(purchase_date) as month, COUNT(ticket_
 Reports for ticket sales by month
 
 ###9. Comparison of Revenue earned
-```sql
+```mysql
 SELECT *  FROM
                 (SELECT SUM(price) as direct FROM purchases NATURAL JOIN ticket natural join flight 
                     WHERE  airline_name = %s
-                    AND purchase_date BETWEEN date_sub(%s, INTERVAL 2 DAY) AND date_sub(%s, INTERVAL 2 DAY)
+                    AND purchase_date BETWEEN %s and %s
                     AND booking_agent_id IS NULL) as one,
                 (SELECT SUM(price) as indirect FROM purchases NATURAL JOIN ticket natural join flight 
                     WHERE  airline_name = %s
-                    AND purchase_date BETWEEN date_sub(%s, INTERVAL 2 DAY) AND date_sub(%s, INTERVAL 2 DAY)
+                    AND purchase_date BETWEEN %s and %s
                     AND booking_agent_id IS NOT NULL) as two
 ```
 Get comparison of agented and unagented ticket sales for the airline 

@@ -67,7 +67,6 @@ def register_agent():
             cursor.execute(q, (email, password, booking_agent_id))
             conn.commit()
             cursor.close()
-
             flash(f'Success! You are registered as agent: {email}', category='success')
             flash('Continue on to login', category='success')
             return redirect(url_for('login_page'))

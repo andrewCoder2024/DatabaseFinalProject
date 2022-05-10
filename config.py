@@ -8,28 +8,24 @@ import pymysql as sql
 import pymysql.cursors
 
 
-def today():
-    return date.today().isoformat()
-
-
 def last1mon():
-    return (date.today() - timedelta(days=30)).isoformat()
+    return str((date.today() - timedelta(days=30)).isoformat())
 
 
 def last6mons():
-    return (date.today() - timedelta(days=180)).isoformat()
+    return str((date.today() - timedelta(days=180)).isoformat())
 
 
 def last1year():
-    return (date.today() - timedelta(days=365)).isoformat()
+    return str((date.today() - timedelta(days=365)).isoformat())
 
 
 def today():
-    return date.today().isoformat()
+    return str(date.today().isoformat())
 
 
 def yearFromNow():
-    return (date.today() + timedelta(days=365)).isoformat()
+    return str((date.today() + timedelta(days=365)).isoformat())
 
 
 app = Flask(__name__)

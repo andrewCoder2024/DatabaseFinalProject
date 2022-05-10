@@ -32,7 +32,8 @@ def search_page():
                                         WHERE airport.airport_name=f.departure_airport
                                         AND airport.airport_city = %s
                                         AND airport.airport_name = %s
-                                        AND f.departure_time BETWEEN DATE_SUB(%s, INTERVAL 2 DAY) AND DATE_ADD(%s, INTERVAL 2 DAY)
+                                        AND f.departure_time BETWEEN DATE_SUB(%s, INTERVAL 2 DAY) 
+                                        AND DATE_ADD(%s, INTERVAL 2 DAY)
                                         AND (f.airline_name, f.flight_num) in
                                             (SELECT flight.airline_name, flight.flight_num FROM flight, airport
                                                 WHERE airport.airport_name=flight.arrival_airport
@@ -53,7 +54,6 @@ def search_page():
                     data = cursor.fetchone()
                     cursor.close()
                     if data:
-
                         flash("flight found", category="success")
                     '''
                     data_dict = {'airline_name': data['airline_name'], 'flight_num': data['flight_num'],
@@ -90,24 +90,22 @@ def search_result():
         try:
             if session.get('usertype') == 'agent':
                 booking_agent_id = getAgentID(username)
-                flash("success 1")
                 if purchase_form.validate_on_submit():
-
-                    flash("success 2")
                     agent_q = """SELECT airline_name FROM booking_agent natural join 
                     booking_agent_work_for where airline_name = %s and email = %s """
-                    flash("success 3")
                     cursor = conn.cursor()
-                    flash("success 3.5")
                     cursor.execute(agent_q, (airline_name, username))
                     data = cursor.fetchall()
                     cursor.close()
-                    flash("success 4")
                     if not data:
                         flash(f'Booking agent {username} does not work for airline {airline_name}', category='danger')
-                        return redirect(search_page())
+                        return redirect(url_for('search.search_result', airline_name=airline_name,
+                                                flight_num=flight_num,
+                                                departure_airport=departure_airport,
+                                                departure_time=departure_time,
+                                                arrival_airport=arrival_airport, arrival_time=arrival_time,
+                                                price=price, airplane_id=airplane_id))
                     cursor = conn.cursor()
-                    flash("success 5")
                     email = purchase_form['email1'].data
                     print("email", email)
                     flash(email)
@@ -120,6 +118,8 @@ def search_result():
                     else:
                         flash(f'customer with email: {email} has not been found in the system', category='danger')
                         return redirect(url_for('home_page'))
+                else:
+                    flash('fail')
             cursor = conn.cursor()
             query = """
                         SELECT MAX(ticket_id) + 1 as nxt_ticket_id FROM ticket
@@ -139,7 +139,7 @@ def search_result():
             queryInsertPurchase = """
                                             INSERT INTO purchases VALUES(%s, %s, %s, CURDATE())
                                             """
-            cursor.execute(queryInsertPurchase, (nxt_ticket_id, username, None))
+            cursor.execute(queryInsertPurchase, (nxt_ticket_id, username, booking_agent_id))
             conn.commit()
             cursor.close()
             flash(f'Success! You have purchased the flight #{flight_num}', category='success')

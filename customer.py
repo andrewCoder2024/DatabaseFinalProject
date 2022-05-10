@@ -11,15 +11,12 @@ from dateutil.relativedelta import relativedelta
 customer_bp = Blueprint("customer", __name__,static_folder="static", template_folder="templates")
 
 
-def total_spending(username, from_date=None, to_date=None):
+def total_spending(username, from_date=last1year(), to_date=today()):
     cursor = conn.cursor()
-    from_date = from_date if from_date else last1year()
-    to_date = to_date if from_date else today()
-    query = """select SUM(flight.price) as spend from customer 
-               natural join purchases
+    query = """select sum(price) as spend from purchases
                natural join ticket natural join flight 
-               where email = %s
-               and purchase_date BETWEEN date_sub(%s, INTERVAL 2 DAY) AND date_sub(%s, INTERVAL 2 DAY)
+               where customer_email = %s
+               and purchase_date BETWEEN %s and %s;
             """
     cursor.execute(query, (username, from_date, to_date))
     data = cursor.fetchone()
@@ -27,20 +24,16 @@ def total_spending(username, from_date=None, to_date=None):
     try:
         return data['spend']
     except:
-        return "Null"
+        return 0
 
 
-def get_spending_spread(username, from_date=None, to_date=None):
+def get_spending_spread(username, from_date=last1year(), to_date=today()):
     cursor = conn.cursor()
-    from_date = from_date if from_date else last1year()
-    to_date = to_date if from_date else today()
     query = """ select SUM(price) as spend, YEAR(purchase_date) as year, 
-                MONTH(purchase_date) as month from customer 
-                natural join purchases 
-                natural join ticket natural join flight 
-                where email = %s
-                and purchase_date between date_sub(%s, INTERVAL 2 DAY) 
-                and date_sub(%s, INTERVAL 2 DAY)
+                MONTH(purchase_date) as month from purchases
+               natural join ticket natural join flight 
+               where customer_email = %s
+               and purchase_date BETWEEN %s and %s
                 GROUP BY year, month
                 ORDER BY purchases.purchase_date
             """
