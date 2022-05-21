@@ -156,9 +156,9 @@ def getReport(airline, fromDate=last6mons(), toDate=today()):
 def getTopDestinations(airline):
     cursor = conn.cursor()
     query = """
-SELECT airport_city, COUNT(ticket_id) as count FROM airport, ticket natural join flight 
+SELECT airport_city, COUNT(ticket_id) as count FROM airport, ticket natural join flight natural join purchases
 WHERE airport_name = arrival_airport 
-AND airline_name= %s and departure_time between CURRENT_DATE - INTERVAL 90 DAY AND 
+AND airline_name= %s and purchase_date between CURRENT_DATE - INTERVAL 90 DAY AND 
 CURRENT_DATE GROUP by airport_city ORDER by count DESC LIMIT 3
             """
     cursor.execute(query, airline)
@@ -166,9 +166,9 @@ CURRENT_DATE GROUP by airport_city ORDER by count DESC LIMIT 3
     cursor.close()
     cursor = conn.cursor()
     query = """
-    SELECT airport_city, COUNT(ticket_id) as count FROM airport, ticket natural join flight 
+    SELECT airport_city, COUNT(ticket_id) as count FROM airport, ticket natural join flight natural join purchases
     WHERE airport_name = arrival_airport 
-    AND airline_name= %s and departure_time between CURRENT_DATE - INTERVAL 365 DAY AND 
+    AND airline_name= %s and purchase_date between CURRENT_DATE - INTERVAL 365 DAY AND 
     CURRENT_DATE GROUP by airport_city ORDER by count DESC LIMIT 3
                 """
     cursor.execute(query, airline)
